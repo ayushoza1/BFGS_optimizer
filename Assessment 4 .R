@@ -1,3 +1,11 @@
+## Things to do
+## 1. Wolfe conditions
+## 2. Reduce complexity for approximating Hessian
+## 3. Errors or warnings
+## 4. Gradient attribute - meaning and if not suppled
+## 5. eps value
+## 6. Comments
+
 fd1d <- function(f=f , theta) {
   eps <- 1e-7
   f0 <- f(theta)
@@ -30,10 +38,10 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
     
     thetanew <- thetaold + drop(step)
     
-    if (f(thetanew) > f(thetaold) + c1 * (t(gradold) %*% step) 
-      | t(fd1d(thetaold + step)) %*% step <  c2 * (t(fd1d(f, thetaold)) %*% step) ) {
-      
-    }
+    #if (f(thetanew) > f(thetaold) + c1 * (t(gradold) %*% step) 
+    #  | t(fd1d(thetaold + step)) %*% step <  c2 * (t(fd1d(f, thetaold)) %*% step) ) {
+    #  
+    #}
     
     s <- thetanew - thetaold
     
@@ -51,7 +59,7 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
       break
     }
     
-    
+
     thetaold <- thetanew
     
   }
@@ -72,23 +80,10 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
 }
 
 
+## Test Code for BFGS
 
 bfgs(theta = c(-1,2), f = rb, maxit = 100, tol = 1e-5)
-
-
-
-theta <- c(-1,2)
 fd1d(f = rb, theta = c(-1,2))
-
-
-
-
-
-
-
-
-?optim
-
 
 rb <-function(theta, getg=FALSE,k=10) {
   ## Rosenbrock objective function, suitable for use by ’bfgs’
@@ -100,6 +95,13 @@ rb <-function(theta, getg=FALSE,k=10) {
     } 
     f
 } ## rb
+
+
+
+
+
+## Rubbish messing around/workings
+
 
 new <-function(theta,getg=FALSE,k=10) {
   ## Rosenbrock objective function, suitable for use by ’bfgs’
