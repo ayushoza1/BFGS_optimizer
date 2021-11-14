@@ -8,50 +8,72 @@ fd1d <- function(f=f , theta) {
     x1 <- theta + pet
     f1 <- f(x1)
     fd1[i] <- (f1 - f0)/eps
-    #print(fd1)
   }
   return(fd1)
 }
 
 bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
-  
+
+  eps <- 1e-7
   thetaold <- theta 
-  B <- I <- diag(length(theta))
+  n <- length(theta)
+  B <- I <- diag(n)
   c1 <- 0.5
   c2 <- 0.9
+  counter <- 0
 
-  #print(thetaold)
-  
   for (i in 1:maxit) {
-    #print(thetaold)
-    step <- -1 *(B %*% fd1d(f, thetaold))
     
-    #if (f(thetaold + step) > f(thetaold) + c1 * (t(fd1d(f, thetaold)) %*% step) 
-    #  | t(fd1d(thetaold + step)) %*% step <  c2 * (t(fd1d(f, thetaold)) %*% step) ) {
-      
-    #}
-    #print(drop(step))
+    gradold <- fd1d(f, thetaold) 
+    
+    step <- -1 *(B %*% gradold)
+    
     thetanew <- thetaold + drop(step)
-    #print(thetanew)
-    #print(thetaold)
+    
+    if (f(thetanew) > f(thetaold) + c1 * (t(gradold) %*% step) 
+      | t(fd1d(thetaold + step)) %*% step <  c2 * (t(fd1d(f, thetaold)) %*% step) ) {
+      
+    }
+    
     s <- thetanew - thetaold
-    #print(s)
-    y <- fd1d(f, theta = thetanew) - fd1d(f, theta = thetaold)
-    #(fd1d(f, theta = thetanew))
-    #print(fd1d(f, theta = thetaold))
-    #print(y)
+    
+    gradnew <- fd1d(f, thetanew) 
+
+    y <- gradnew - gradold
+
     rho <- drop(1/(t(s) %*% y))
-    #print(rho)
+
     B <- ((I - rho*(s %*% t(y))) %*% B %*% (I - rho*(y %*% t(s)))) + (rho * s %*% t(s)) 
-    #print(B)
+  
+    counter = counter + 1
+    
+    if (max(abs(gradnew)) < (abs(f(thetanew))+fscale)*tol) {
+      break
+    }
+    
+    
     thetaold <- thetanew
+    
   }
-  print(thetanew)
+  
+
+  Hfd <- matrix(0,n,n) ## finite diference Hessian 
+  for (i in 1:n) { ## loop over parameters 
+    th1 <- thetanew; th1[i] <- th1[i] + eps ## increase th0[i] by eps 
+    g1 <- fd1d(f, th1) ## compute resulting nll 
+    Hfd[i,] <-(g1 - gradnew)/eps ## approximate second derivs 
+  }
+  
+  Hfd <-0.5 * (t(Hfd) + Hfd)
+  
+  
+  return(list(f = f(thetanew), theta = thetanew, iter = counter, g = gradnew, H = Hfd))
+  
 }
 
 
 
-bfgs(theta = c(-1,2), f = rb, maxit = 25)
+bfgs(theta = c(-1,2), f = rb, maxit = 100, tol = 1e-5)
 
 
 
@@ -62,6 +84,10 @@ fd1d(f = rb, theta = c(-1,2))
 
 
 
+
+
+
+?optim
 
 
 rb <-function(theta, getg=FALSE,k=10) {
@@ -145,3 +171,7 @@ add(a=d, e = 2, f = 3, b = 4)
 
 
 d()
+
+for (i in 1:2) {
+  print(i)
+}
