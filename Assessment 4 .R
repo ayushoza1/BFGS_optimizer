@@ -1,8 +1,6 @@
 ## Things to do
 ## 1. Wolfe conditions
 ## 2. Reduce complexity for approximating Hessian
-## 3. Errors or warnings
-## 4. Gradient attribute - meaning and if not suppled
 ## 5. eps value
 ## 6. Comments
 
@@ -48,27 +46,37 @@
 ## Defining and calculating the finite differencing function to calculate the gradient/differentiation of the objective function 
 ## It takes in the objective function and theta as its arguments and returns the value after calculating the finite difference/first order derivative
 
-fd1d <- function(f=f , theta) {          ## Declaring and defining the function fd1d with necessary arguments
-  eps <- 1e-7                            ## Using epsilon value as 1e-7 as delta for differencing
+get_grad <- function(f=f , theta) {          ## Declaring and defining the function fd1d with necessary arguments
   
-  ## Initiating the differencing with the starting point as obtained from theta
-  
-  f0 <- f(theta)                         ## Initiating f0 starting point of the function            
-  fd1 <- theta                           ## Initiating fd1 with theta vector of starting parameters
+  if (formals(f)[2] == TRUE) {
+    
+    eps <- 1e-7                            ## Using epsilon value as 1e-7 as delta for differencing
+    
+    ## Initiating the differencing with the starting point as obtained from theta
+    
+    f0 <- f(theta)                         ## Initiating f0 starting point of the function            
+    grad <- theta                           ## Initiating fd1 with theta vector of starting parameters
+    
+    ## The below loop is to calculate the finite difference/first order derivative of the objective function f
+    ## First, we create a vector of 0s and then perturbate with the epsilon value while performing the differencing
+    ## The finite differencing formula can be stated as fd = (f1 - f0)/eps where f1 is next value of the curve obtained 
+    ## by using the theta and eps values and f0 is the current point on the function
 
-  ## The below loop is to calculate the finite difference/first order derivative of the objective function f
-  ## First, we create a vector of 0s and then perturbate with the epsilon value while performing the differencing
-  ## The finite differencing formula can be stated as fd = (f1 - f0)/eps where f1 is next value of the curve obtained 
-  ## by using the theta and eps values and f0 is the current point on the function
-  
-  for (i in 1:length(theta)) {          ## Looping over the length of theta to calculate finite differences
-    pet <- rep(0, length(theta))        ## Creating a vector of 0s to perturbate with eps values 
-    pet[i] <- eps                       ## Performing perturbation
-    x1 <- theta + pet                   ## Determining/approximating to the next point on the function
-    f1 <- f(x1)                         ## Calculating function value at the next point
-    fd1[i] <- (f1 - f0)/eps             ## Calculating finite difference between new point on the function with the old point
-  } ## End of loop 
-  return(fd1)                           ## Finally returning the obtained value of the finite difference
+    for (i in 1:length(theta)) {          ## Looping over the length of theta to calculate finite differences
+      pet <- rep(0, length(theta))        ## Creating a vector of 0s to perturbate with eps values 
+      pet[i] <- eps                       ## Performing perturbation
+      x1 <- theta + pet                   ## Determining/approximating to the next point on the function
+      f1 <- f(x1)                         ## Calculating function value at the next point
+      grad[i] <- (f1 - f0)/eps             ## Calculating finite difference between new point on the function with the old point
+    } ## End of loop 
+
+  } else {
+    
+    grad <- attr(f(theta, 1), "gradient")
+
+  }
+
+  return(grad)                           ## Finally returning the obtained value of the finite difference
 }
 
 
@@ -79,7 +87,7 @@ fd1d <- function(f=f , theta) {          ## Declaring and defining the function 
 
 bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {     ## Declaring and defining the BFGS function 
   
-  ## Since calculating Hessian matrices is complex and costly, we use the first order gradients obtained above from fd1d to approximate
+  ## Since calculating Hessian matrices is complex and costly, we use the first order gradients obtained above from get_grad to approximate
   ## our Hessian matrix. This is achieved by combining gradient information over several steps to build up an approximate to Hessian. 
   
   ## Here eps is again used to perform the differencing. Then we use the theta details to perform further algorithm iterations. 
@@ -92,25 +100,33 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {     ## Declaring and
   c1 <- 0.5                                         ## Initializing c1 and c2 step lengths chosen satisfying Wolfe conditions
   c2 <- 0.9
   counter <- 0                                      ## Initializing a counter to return the number of iterations for optimization 
-
+  
+  if (any(is.finite(f(theta))) == FALSE | any(is.finite(get_grad(f, theta = theta))) == FALSE) {
+    stop("Gradient or function is non-finite, please try different parameter values")
+  } 
+  
   ## Now that we have all variables required in place, we start to loop over the maxit value and start the optimization process
   
   for (i in 1:maxit) {                              ## Start of the loop over maxit = 100 condition to stop optimizing if maxit is reached before
     
 	## gradold initialized to store gradient of the function at previous point on the function
     
-	gradold <- fd1d(f, thetaold)                    ## gradient is obatained from fd1d function above              
-    
+	  gradold <- get_grad(f, thetaold)                    ## gradient is obatained from get_grad function above              
+  
+
+	
 	## The Quasi-Newton step where step = -InvHessian * gradient 
 	
     step <- -1 *(B %*% gradold)                     ## Determining the step using gradient value obtained from finite difference
     
+
 	## Determining the next point on the function using the step obtained above 
 	
     thetanew <- thetaold + drop(step)               ## Storing the new position in thetanew variable 
-    
+
+    #print(thetanew)
     # if (f(thetanew) > f(thetaold) + c1 * (t(gradold) %*% step) 
-    #  t(fd1d(thetaold + step)) %*% step <  c2 * (t(fd1d(f, thetaold)) %*% step) ) {
+    #  t(get_grad(thetaold + step)) %*% step <  c2 * (t(get_grad(f, thetaold)) %*% step) ) {
       
     #}
 	
@@ -120,15 +136,15 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {     ## Declaring and
 	## Calculating difference between the new and old theta values
 	
     s <- thetanew - thetaold                       
-    
-	## Calculating the new gradient with new theta as obtained from step above using fd1d function again
-    	
-    gradnew <- fd1d(f, thetanew) 
 
+	## Calculating the new gradient with new theta as obtained from step above using get_grad function again
+    	
+    gradnew <- get_grad(f, thetanew) 
+    
     ## Calculating difference between the new and old gradients
      	
     y <- gradnew - gradold
-	
+
 	## Calculaitng rho for BFGS update condition where rho = transpost(s) * y
  
     rho <- drop(1/(t(s) %*% y))                 ## Calculating rho value from s and y as per definition 
@@ -144,11 +160,16 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {     ## Declaring and
 	
     counter = counter + 1                     ## Updating counter for each iteration
     
-	## Checking for the first Wolfe condition
+	## Checking for convergence
 	
     if (max(abs(gradnew)) < (abs(f(thetanew))+fscale)*tol) {
       break
-    }
+    } else if (counter == maxit) {
+      warning("Max number of itterations reached and convergance has not occured")
+    } else if (f(thetanew) - f(thetaold) > 0){
+      warning(paste("Objective function not being reduced for itteration", i))
+    } 
+    
     
 	## Updating thetaold with thetanew for next iteration 
 
@@ -162,7 +183,7 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {     ## Declaring and
   Hfd <- matrix(0,n,n)                                ## Initiating all 0s finite difference Hessain matrix 
   for (i in 1:n) {                                    ## Looping over the parameter length value to iterate over the matrix and calculate entries
     th1 <- thetanew; th1[i] <- th1[i] + eps           ## Updating th1 to thetanew obtained from above BFGS update and the eps value  
-    g1 <- fd1d(f, th1)                                ## Calculating the finite difference of the function with th1 value 
+    g1 <- get_grad(f, th1)                                ## Calculating the finite difference of the function with th1 value 
     Hfd[i,] <-(g1 - gradnew)/eps                      ## Calculating/approximating second order derivative Hessian matrix  
   }
   
@@ -175,10 +196,17 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {     ## Declaring and
   
 }
 
+bfgs(theta = c(-1,2), f = rb, maxit = 15, tol = 1e-5) 
+
+
+
+
+
+
 
 ## Test Code for BFGS as suggested with Rosenbrick objective function
 
-bfgs(theta = c(-1,2), f = rb, maxit = 100, tol = 1e-5)     ## Calling bfgs function with required arguments
+    ## Calling bfgs function with required arguments
 fd1d(f = rb, theta = c(-1,2))                              ## Calculating finite difference 
 
 ## Defining Rosenbrock function
@@ -199,7 +227,61 @@ rb <-function(theta, getg=FALSE,k=10) {
 
 
 
+
+
+
+
+
+
+
 ## Rubbish messing around/workings
+
+funct <- function(x) {
+  print(1/x)
+}
+
+funct(0) == 'Inf'
+
+test <- function(x) {
+  print(x^2)
+  warning("This is a square")
+}
+
+test2 <- function(x) {
+  stop("This is a square")
+  print(x^2)
+}
+
+test2(9)
+new <- function(f=f, theta) {
+  if (formals(f)[2] == FALSE) {
+    print("hi")
+  }
+}
+
+new(rb, c(-1,2))
+
+attr(rb(c(-1,2)), 'gradient')
+
+rb(c(-1,2))
+
+
+attr(rb(c(-1,2), 1), "gradient")
+
+
+
+attributes(a)
+
+attr(, 'gradient')
+
+factors(rb)
+
+comp_grad <- function(f=f, theta) {
+  print(attr(f(c(-1,2), 1), "gradient"))
+}
+  
+comp_grad(rb, c(-1,2))
+
 
 
 new <-function(theta,getg=FALSE,k=10) {
@@ -276,3 +358,9 @@ d()
 for (i in 1:2) {
   print(i)
 }
+
+a <- c(1,2,3,4)
+
+all(is.finite(a))
+
+
