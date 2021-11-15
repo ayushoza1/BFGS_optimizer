@@ -17,7 +17,7 @@
 
 ## Overview
 
-##*****************************************************************************************************
+## *****************************************************************************************************
 
 ## The BFGS Optimizer is an iterative method for solving non-linear optimization problems. The BFGS determines the 
 ## direction of descent by preconditioning the gradient with curvature information. This is achieved by gradually improving 
