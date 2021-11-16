@@ -10,7 +10,7 @@
 ## an approximation to the Hessian matrix of the loss function obtained by gradient evaluation. We also Define and calculate
 ## the finite differencing function to calculate the gradient/differentiation of the objective function if gradient is not 
 ## provided. Wolfe conditions are also checked and the step length updated to ensure or objective function is decaresing and 
-## that Hessian is positive definite. 
+## that Hessian is positive definite.. 
 
 get_grad <- function(f=f , theta) {
   
