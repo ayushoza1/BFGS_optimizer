@@ -50,7 +50,7 @@ get_grad <- function(f=f , theta) {          ## Declaring and defining the funct
   
   if (formals(f)[2] == TRUE) {
     
-    eps <- 1e-7                            ## Using epsilon value as 1e-7 as delta for differencing
+    eps <- sqrt(.Machine$double.eps)                           ## Using epsilon value as 1e-7 as delta for differencing
     
     ## Initiating the differencing with the starting point as obtained from theta
     
@@ -93,13 +93,13 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {     ## Declaring and
   ## Here eps is again used to perform the differencing. Then we use the theta details to perform further algorithm iterations. 
   ## c1 and c2 are the step length conditions chosen astisfying the Wolfe conditions. 
 
-  eps <- 1e-7                                       ## Using eps as 1e-07 for differencing           
+  eps <- sqrt(.Machine$double.eps)                  ## Using eps as 1e-07 for differencing           
   thetaold <- theta                                 ## Using thetaold variable to store the previous value of the function. Initially given theta
   n <- length(theta)                                ## Initializing n to be length of theta to create a diagonal matrix
-  B <- I <- diag(n)                                 ## Initializing B and I diagonal matrices of n where B is inverse Hessian matrix 
-  c1 <- 0.5                                         ## Initializing c1 and c2 step lengths chosen satisfying Wolfe conditions
+  B <- I <- diag(n)                                 ## Initializing B and I diagonal matrices of n where B is inverse Hessian matrix                                       ## Initializing c1 and c2 step lengths chosen satisfying Wolfe conditions
   c2 <- 0.9
   counter <- 0                                      ## Initializing a counter to return the number of iterations for optimization 
+  
   
   if (any(is.finite(f(theta))) == FALSE | any(is.finite(get_grad(f, theta = theta))) == FALSE) {
     stop("Gradient or function is non-finite, please try different parameter values")
@@ -107,28 +107,51 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {     ## Declaring and
   
   ## Now that we have all variables required in place, we start to loop over the maxit value and start the optimization process
   
+  
   for (i in 1:maxit) {                              ## Start of the loop over maxit = 100 condition to stop optimizing if maxit is reached before
     
 	## gradold initialized to store gradient of the function at previous point on the function
     
 	  gradold <- get_grad(f, thetaold)                    ## gradient is obatained from get_grad function above              
   
-
 	
 	## The Quasi-Newton step where step = -InvHessian * gradient 
 	
     step <- -1 *(B %*% gradold)                     ## Determining the step using gradient value obtained from finite difference
+
+    wolfe_1 <- f(thetaold + drop(step)) <= f(thetaold) 
+    wolfe_2 <- t(get_grad(f, thetaold + drop(step))) %*% step >=  c2 * (t(get_grad(f, thetaold))) %*% step
+    wolfe_counter <- 0
     
-
-	## Determining the next point on the function using the step obtained above 
-	
-    thetanew <- thetaold + drop(step)               ## Storing the new position in thetanew variable 
-
-    #print(thetanew)
-    # if (f(thetanew) > f(thetaold) + c1 * (t(gradold) %*% step) 
-    #  t(get_grad(thetaold + step)) %*% step <  c2 * (t(get_grad(f, thetaold)) %*% step) ) {
+    while (wolfe_1 == FALSE | wolfe_2 == FALSE) {
       
-    #}
+      while (wolfe_1 == FALSE) {
+        step <- step * 0.5
+        wolfe_counter <- wolfe_counter + 1
+        wolfe_1 <- f(thetaold + drop(step)) <= f(thetaold) 
+        if (wolfe_counter > 50) {
+          stop("Stuck in loop with Wolfe conditions 1")
+        } 
+      }
+      
+      while (wolfe_2 == FALSE) {
+        step <- step * 1.5
+        wolfe_counter <- wolfe_counter + 1
+        wolfe_2 <- t(get_grad(f, thetaold + drop(step))) %*% step >=  c2 * (t(get_grad(f, thetaold))) %*% step 
+        if (wolfe_counter > 50) {
+          stop("Stuck in loop with Wolfe conditions 2")
+          
+      wolfe_1 <- f(thetaold + drop(step)) <= f(thetaold) 
+      wolfe_2 <- t(get_grad(f, thetaold + drop(step))) %*% step >=  c2 * (t(get_grad(f, thetaold))) %*% step      
+          
+        } 
+      }
+      
+    }
+
+	
+    thetanew <- thetaold + step               ## Storing the new position in thetanew variable 
+
 	
 	## From here all the steps below are calculated to approimate the Hessian using the gradient values. We calculate all necessary parameters 
 	## use them in performing the iterations of BGS
@@ -196,10 +219,12 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {     ## Declaring and
   
 }
 
-bfgs(theta = c(-1,2), f = rb, maxit = 15, tol = 1e-5) 
+bfgs(theta = c(-1,2), f = rb, maxit = 50, tol = 1e-5) 
 
 
+rb(c(-1,2))
 
+rb(c(-1,2) + step)
 
 
 
@@ -225,16 +250,22 @@ rb <-function(theta, getg=FALSE,k=10) {
 
 
 
+get_grad(rb, c(-1,2))
 
 
 
-
-
+(formals(rb)[2] == TRUE)
 
 
 
 
 ## Rubbish messing around/workings
+
+
+if (f(thetanew) > f(thetaold) + c1 * (t(gradold) %*% step) |
+    t(get_grad(thetaold + step)) %*% step <  c2 * (t(get_grad(f, thetaold)) %*% step) ) {
+  
+}
 
 funct <- function(x) {
   print(1/x)
@@ -362,5 +393,14 @@ for (i in 1:2) {
 a <- c(1,2,3,4)
 
 all(is.finite(a))
+
+step <- matrix(c(100,-402), 2, 1)
+
+t(get_grad(f, thetaold + drop(step))) %*% step >=  c2 * (t(get_grad(f, thetaold))) %*% step
+
+t(get_grad(rb, c(-1,2) + drop(step))) %*% step 
+
+c2 <- 0.9
+c2 * (t(get_grad(rb, c(-1,2)))) %*% step
 
 
