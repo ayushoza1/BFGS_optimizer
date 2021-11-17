@@ -12,11 +12,11 @@
 ## provided. Wolfe conditions are also checked and the step length updated to ensure or objective function is decaresing and 
 ## that Hessian is positive definite.. 
 
-get_grad <- function(f=f , theta) {
+get_grad <- function(f ,theta, ...) {
   
   ## Get_grad function 
   ## *****************
-  ##  The loop below is used to finite difference/first order derivative of the objective function f
+  ## The loop below is used to finite difference/first order derivative of the objective function f
   ## First, we create a vector of 0s and then perturb with the epsilon value while performing the differencing
   ## The finite differencing formula can be stated as fd = (f1 - f0)/eps where f1 is next value of the curve obtained 
   ## by using the theta and eps values and f0 is the current point on the function. f = function of gradient to be found
@@ -26,14 +26,14 @@ get_grad <- function(f=f , theta) {
     
     eps <- sqrt(.Machine$double.eps) ## Declare peterbation value
     
-    f0 <- f(theta)  ## Initiating the vector of paramters where gradient is calculated            
+    f0 <- f(theta, ...)  ## Initiating the vector of paramters where gradient is calculated            
     grad <- theta   ## Initiating a storage vector for the gradient to be passed into
 
     for (i in 1:length(theta)) {  ## Loop through parameters
       pet <- rep(0, length(theta))  ## Creating a vector of 0s to perturb with eps values 
       pet[i] <- eps ## Peturb the value of parameter i 
       x1 <- theta + pet ## new paramter value   
-      f1 <- f(x1) ## Calculate function at the new parameter value
+      f1 <- f(x1, ...) ## Calculate function at the new parameter value
       grad[i] <- (f1 - f0)/eps  
     } 
 
@@ -47,7 +47,7 @@ get_grad <- function(f=f , theta) {
 }
 
 
-wolf_check <- function(f, thetaold, step, c2) {
+wolf_check <- function(f ,thetaold, step, c2, ...) {
   
   ## Wolfe_check function 
   ## *******************
@@ -57,30 +57,30 @@ wolf_check <- function(f, thetaold, step, c2) {
   ## not met the step length is halved and if the second condition is not met the step length is multiplied
   ## by 1.5. The function 'breaks' if no step length is found satifying both conditions after 50 itterations.
   
-  wolfe_1 <- f(thetaold + drop(step)) <= f(thetaold)  ## Logical to see if objective function has been reduced
-  wolfe_2 <- t(get_grad(f, thetaold + drop(step))) %*% step >=  c2 * (t(get_grad(f, thetaold))) %*% step ## Logical to see if updated Hessian is positive deffinite 
+  wolfe_1 <- f(thetaold + drop(step), ...) <= f(thetaold, ...)  ## Logical to see if objective function has been reduced
+  wolfe_2 <- t(get_grad(f,thetaold + drop(step), ...)) %*% step >=  c2 * (t(get_grad(f,thetaold, ...))) %*% step ## Logical to see if updated Hessian is positive deffinite 
   wolfe_counter <- 0 ## Initialize counter to count updates of step length if wolfe conditions not met
-  
+    
   while (wolfe_1 == FALSE | wolfe_2 == FALSE) { ## Continuous loop if wolfe conditions do not hold 
     
     while (wolfe_1 == FALSE) { ## Function not being reduced
-      step <- step * 0.5 ## Reduce step length by 1/2
+      step <- step * 0.25 ## Reduce step length by 1/2
       wolfe_counter <- wolfe_counter + 1 ## Update counter 
-      wolfe_1 <- f(thetaold + drop(step)) <= f(thetaold) ## Update logical if first wolfe condition satisfied
-      if (wolfe_counter > 50) { ## break out of function if finding step length is taking too long
+      wolfe_1 <- f(thetaold + drop(step), ...) <= f(thetaold, ...) ## Update logical if first wolfe condition satisfied
+      if (wolfe_counter > 5) { ## break out of function if finding step length is taking too long
         stop("Stuck in loop with Wolfe conditions 1")
       } 
     }
     
     while (wolfe_2 == FALSE) { ## Hessian not positive definite
-      step <- step * 1.5 ## Increase step length by 1.5
+      step <- step * 1.25 ## Increase step length by 1.5
       wolfe_counter <- wolfe_counter + 1 ## Update counter 
-      wolfe_2 <- t(get_grad(f, thetaold + drop(step))) %*% step >=  c2 * (t(get_grad(f, thetaold))) %*% step ## Update logical if second wolfe condition satisfied
-      if (wolfe_counter > 50) { ## break out of function if finding step length is taking too long
+      wolfe_2 <- t(get_grad(f,thetaold + drop(step), ...)) %*% step >=  c2 * (t(get_grad(f,thetaold, ...))) %*% step ## Update logical if second wolfe condition satisfied
+      if (wolfe_counter > 5) { ## break out of function if finding step length is taking too long
         stop("Stuck in loop with Wolfe conditions 2")
         
-        wolfe_1 <- f(thetaold + drop(step)) <= f(thetaold) ## Update logicals to test both conditions have been met
-        wolfe_2 <- t(get_grad(f, thetaold + drop(step))) %*% step >=  c2 * (t(get_grad(f, thetaold))) %*% step ## Udpate logicals to test both conditions have been met      
+        wolfe_1 <- f(thetaold + drop(step), ...) <= f(thetaold, ...) ## Update logicals to test both conditions have been met
+        wolfe_2 <- t(get_grad(f,thetaold + drop(step), ...)) %*% step >=  c2 * (t(get_grad(f,thetaold, ...))) %*% step ## Udpate logicals to test both conditions have been met      
         
       } 
     }
@@ -122,28 +122,29 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
   c2 <- 0.9 ## Initialize c2 for use in second Wolfe condition check
   counter <- 0  ## Initializing a counter to store number of iterations of bfgs 
   
-  if (any(is.finite(f(theta))) == FALSE | any(is.finite(get_grad(f, theta = theta))) == FALSE) { ## Check to see if the gradient or function value is non finite
+  if (any(is.finite(f(theta, ...))) == FALSE | any(is.finite(get_grad(f, theta, ...))) == FALSE) { ## Check to see if the gradient or function value is non finite
     stop("Gradient or function is non-finite, please try different parameter values") ## Stop function if so 
   } 
   
   
   for (i in 1:maxit) {  ## Loop over the max itterations (loop is broken if convergence is found before)
+  
     
-	  gradold <- get_grad(f, thetaold) ## Gradient of old or k-1 paramter vector stored            
+	  gradold <- get_grad(f, theta = thetaold, ...) ## Gradient of old or k-1 paramter vector stored    
 	
     step <- -1 *(B %*% gradold) ## Determie the Quasi-Newton step = -InvHessian * gradient or the descent direction
-	  
-    step <- wolf_check(f, thetaold, step, c2) ## Check Wolfe conditions and return new step length
+    
+    step <- wolf_check(f,thetaold, step, c2, ...) ## Check Wolfe conditions and return new step length
     
     thetanew <- thetaold + step   ## Calculate the new parameter vector, or theta k
 	
     s <- thetanew - thetaold  ## Calculate step length vector                   
     	
-    gradnew <- get_grad(f, thetanew) ## Calculate gradient of the new parameter vector
+    gradnew <- get_grad(f,thetanew, ...) ## Calculate gradient of the new parameter vector
      	
     y <- gradnew - gradold ## Calculate differnce between old and new gradients
  
-    rho <- drop(1/(t(s) %*% y)) ## rho = transpost(s) * y              
+    rho <- drop(1/(t(s) %*% y)) ## rho = transpost(s) * y         
 
     ## B evaluated to reduced computational time by  matrix/vector multipldation rather than matrix/matrix
     
@@ -151,11 +152,11 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
 	
     counter = counter + 1 ## Update counter for each iteration
 	
-    if (max(abs(gradnew)) < (abs(f(thetanew))+fscale)*tol) { ## Check for convergence
+    if (max(abs(gradnew)) < (abs(f(thetanew, ...))+fscale)*tol) { ## Check for convergence
       break ## break function if convergence is found
     } else if (counter == maxit) { ## If we reach max number of iterations and convergence not found then issue warning
       warning("Max number of itterations reached and convergance has not occured")
-    } else if (f(thetanew) - f(thetaold) > 0){ ## If objective function has not been reduced issue warning 
+    } else if (f(thetanew, ...) - f(thetaold, ...) > 0){ ## If objective function has not been reduced issue warning 
       warning(paste("Objective function not being reduced for itteration", i))
     } 
 
@@ -169,7 +170,7 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
   Hfd <- matrix(0,n,n)  ## Initiatite the Hessian matrix to be calculated by finite differencing
   for (i in 1:n) {  ## Looping over the parameter length value to iterate over the matrix and calculate entries
     th1 <- thetanew; th1[i] <- th1[i] + eps ## Perturb gradient vector 
-    g1 <- get_grad(f, th1)  ## Calculating the gradient vector 
+    g1 <- get_grad(f,th1, ...)  ## Calculating the gradient vector 
     Hfd[i,] <-(g1 - gradnew)/eps  
   }
   
@@ -182,9 +183,39 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
   
 }
 
-
-bfgs(theta = c(-1,2), f = rb, maxit = 15, tol = 1e-5)
+bfgs(theta = c(-1,2), f = rb, maxit = 100, tol = 1e-6)
 bfgs(theta = c(50,50), f = XY, maxit = 50, tol = 1e-5)
+bfgs(theta = c(10,10), f = boha1, maxit = 100, tol = 1e-5)
+bfgs(theta = c(1,1), f = perm0db , maxit = 100, tol = 1e-5)
+bfgs(theta = c(1,1, 1, 6 ,7 ,8), f = spheref , maxit = 100, tol = 1e-5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+boha1 <- function(xx, getg = FALSE)
+{
+  x1 <- xx[1]
+  x2 <- xx[2]
+  
+  term1 <- x1^2
+  term2 <- 2*x2^2
+  term3 <- -0.3 * cos(3*pi*x1)
+  term4 <- -0.4 * cos(4*pi*x2)
+  
+  y <- term1 + term2 + term3 + term4 + 0.7
+  return(y)
+}
 
 
 
@@ -212,8 +243,14 @@ rb <-function(theta, getg=TRUE,k=10) {
   f
 } ## rb
 
-
-
+spheref <- function(xx, getg= FALSE)
+{
+  
+  sum <- sum(xx^2)
+  
+  y <- sum
+  return(y)
+}
 
 
 
