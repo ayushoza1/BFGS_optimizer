@@ -16,7 +16,7 @@ get_grad <- function(f=f , theta) {
   
   ## Get_grad function 
   ## *****************
-  ##  The loop below is used to finite difference/first order derivative of the objective function f
+  ## The loop below is used to finite difference/first order derivative of the objective function f
   ## First, we create a vector of 0s and then perturb with the epsilon value while performing the differencing
   ## The finite differencing formula can be stated as fd = (f1 - f0)/eps where f1 is next value of the curve obtained 
   ## by using the theta and eps values and f0 is the current point on the function. f = function of gradient to be found
@@ -24,20 +24,20 @@ get_grad <- function(f=f , theta) {
   
   if (formals(f)[2] == FALSE) { ## Check to see if gradient calculation is needed by finite differencing
     
-    eps <- sqrt(.Machine$double.eps) ## Declare peterbation value
+    eps <- sqrt(.Machine$double.eps) ## Declare perturbation value
     
     f0 <- f(theta)  ## Initiating the vector of paramters where gradient is calculated            
     grad <- theta   ## Initiating a storage vector for the gradient to be passed into
 
     for (i in 1:length(theta)) {  ## Loop through parameters
       pet <- rep(0, length(theta))  ## Creating a vector of 0s to perturb with eps values 
-      pet[i] <- eps ## Peturb the value of parameter i 
+      pet[i] <- eps ## Perturb the value of parameter i 
       x1 <- theta + pet ## new paramter value   
       f1 <- f(x1) ## Calculate function at the new parameter value
       grad[i] <- (f1 - f0)/eps  
     } 
 
-  } else {  ## If finite differncing is not requed gradient function is provided
+  } else {  ## If finite differncing is not required gradient function is provided
     
     grad <- attr(f(theta, 1), "gradient") 
 
@@ -52,10 +52,10 @@ wolf_check <- function(f, thetaold, step, c2) {
   ## Wolfe_check function 
   ## *******************
   ## Function checks that the objective function has been reduced and that the Hessian matrix is positive
-  ## definite for the next run of the bfgs iteration. A nested while loop is used to ensuer both conditions
+  ## definite for the next run of the bfgs iteration. A nested while loop is used to ensure both conditions
   ## are met and the wolfe conditions rechecked once one condition has been met. If the first condition is 
   ## not met the step length is halved and if the second condition is not met the step length is multiplied
-  ## by 1.5. The function 'breaks' if no step length is found satifying both conditions after 50 itterations.
+  ## by 1.5. The function 'breaks' if no step length is found satifying both conditions after 50 iterations.
   
   wolfe_1 <- f(thetaold + drop(step)) <= f(thetaold)  ## Logical to see if objective function has been reduced
   wolfe_2 <- t(get_grad(f, thetaold + drop(step))) %*% step >=  c2 * (t(get_grad(f, thetaold))) %*% step ## Logical to see if updated Hessian is positive deffinite 
@@ -101,12 +101,15 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
   ## The BFGS Optimizer is an iterative method for solving non-linear optimization problems. The BFGS determines the 
   ## direction of descent by preconditioning the gradient with curvature information. This is achieved by gradually improving 
   ## an approximation to the Hessian matrix of the loss function obtained by gradient evaluation.  
+  
+  ## Below are the input arguments provided to bfgs function: 
   ## theta is the vector of initial values for our optimization problem
   ## f is the objective function argument. The first argument of function is a vector of optimization parameters and second
   ## argument is a logical indicating if gradient is to be calculated
   ## ... is for any arguments of f that are to be passed to it after the above two
   ## fscale indicates a rough estimate of magnitude of f at the optimum
   ## maxit is the maximum number of BFGS iterations taken by the function before stopping further optimization
+  
   ## The BFGS function above returns the below values upon calling it with valid arguments: 
   ## f being the scalar value of the objective function at the minimum
   ## theta is the vector of values of parameters at the minimum
@@ -127,7 +130,7 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
   } 
   
   
-  for (i in 1:maxit) {  ## Loop over the max itterations (loop is broken if convergence is found before)
+  for (i in 1:maxit) {  ## Loop over the max iterations (loop is broken if convergence is found before)
     
 	  gradold <- get_grad(f, thetaold) ## Gradient of old or k-1 paramter vector stored            
 	
@@ -143,9 +146,9 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
      	
     y <- gradnew - gradold ## Calculate differnce between old and new gradients
  
-    rho <- drop(1/(t(s) %*% y)) ## rho = transpost(s) * y              
+    rho <- drop(1/(t(s) %*% y)) ## rho = transpose(s) * y              
 
-    ## B evaluated to reduced computational time by  matrix/vector multipldation rather than matrix/matrix
+    ## B evaluated to reduced computational time by  matrix/vector multiplication rather than matrix/matrix
     
     B <- B - (rho*B%*%y%*%t(s)) - rho*s%*%(t(y)%*%B) + (rho^2)*s%*%(t(y)%*%B)%*%y%*%t(s) + (rho * s %*% t(s)) 	## Approximating the Hessian B where B is given below as per BFGS algorithm:
 	
@@ -154,9 +157,9 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
     if (max(abs(gradnew)) < (abs(f(thetanew))+fscale)*tol) { ## Check for convergence
       break ## break function if convergence is found
     } else if (counter == maxit) { ## If we reach max number of iterations and convergence not found then issue warning
-      warning("Max number of itterations reached and convergance has not occured")
+      warning("Max number of iterations reached and convergance has not occured")
     } else if (f(thetanew) - f(thetaold) > 0){ ## If objective function has not been reduced issue warning 
-      warning(paste("Objective function not being reduced for itteration", i))
+      warning(paste("Objective function not being reduced for iteration", i))
     } 
 
     thetaold <- thetanew ## Update theta so theta k is now theta k-1
@@ -173,7 +176,7 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
     Hfd[i,] <-(g1 - gradnew)/eps  
   }
   
-  Hfd <-0.5 * (t(Hfd) + Hfd)  ## Ensure the Hessian is symmetrix
+  Hfd <-0.5 * (t(Hfd) + Hfd)  ## Ensure the Hessian is symmetric
   
   ## Returning all the calculated values as required by the BFG function as a list - function value at thetanew, thetanew, 
   ## number of iterations taken for approximation, newgradient, Hessian 
