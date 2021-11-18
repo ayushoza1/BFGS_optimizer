@@ -42,7 +42,7 @@ get_grad <- function(f ,theta, ...) {
 
   } else {  ## If finite differncing is not required gradient function is provided
     
-    grad <- attr(f(theta, 1), "gradient") 
+    grad <- attr(f(theta, ...), "gradient") 
 
   }
 
@@ -185,20 +185,22 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
     Hfd[i,] <-(g1 - gradnew)/eps  
   }
   
-  Hfd <-0.5 * (t(Hfd) + Hfd)  ## Ensure the Hessian is symmetrix
+  Hfd <-0.5 * (t(Hfd) + Hfd)  ## Ensure the Hessian is symmetric
   
   ## Returning all the calculated values as required by the BFG function as a list - function value at thetanew, thetanew, 
   ## number of iterations taken for approximation, newgradient, Hessian 
   
-  return(list(f = f(thetanew), theta = drop(thetanew), iter = counter, g = gradnew, H = Hfd)) ## Return list
+  return(list(f = f(thetanew, ...), theta = drop(thetanew), iter = counter, g = gradnew, H = Hfd)) ## Return list
   
 }
 
-bfgs(theta = c(-1,2), f = rb, maxit = 100, tol = 1e-6)
+bfgs(theta = c(-1,2), f = rb, maxit = 100, tol = 1e-6, k=10)
 bfgs(theta = c(50,50), f = XY, maxit = 50, tol = 1e-5)
 bfgs(theta = c(10,10), f = boha1, maxit = 100, tol = 1e-5)
 bfgs(theta = c(1,1), f = perm0db , maxit = 100, tol = 1e-5)
-bfgs(theta = c(1,1, 1, 6 ,7 ,8), f = spheref , maxit = 100, tol = 1e-5)
+
+
+bfgs(theta = c(1, 1, 1, 6 ,7 ,8), f = spheref , maxit = 100, tol = 1e-5)
 
 
 
@@ -243,7 +245,7 @@ XY <-function(theta, getg=FALSE) {
   f
 } ## X^2 + Y^2
 
-rb <-function(theta, getg=TRUE,k=10) {
+rb <-function(theta, getg=TRUE,k) {
   ## Rosenbrock objective function, suitable for use by ’bfgs’
   z <-theta[1]; x <-theta[2]
   f <-k*(z-x^2)^2 + (1-x)^2 + 1
@@ -265,8 +267,9 @@ spheref <- function(xx, getg= FALSE)
 
 
 
+theta <- c(-1,2)
 
-
+attr(rb(theta), "gradient") 
 
 
 
