@@ -1,4 +1,5 @@
 ## Work Group 1 - Sanika Baxi - s2159255		Ayush Oza - s2184992		Gowtham Palepu - s2113890
+## GitHub repo link: https://github.com/ayushoza1/SP-Assessment-4.git
 
 ## BFGS Optimizer
 
@@ -193,5 +194,3 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
   return(list(f = f(thetanew, ...), theta = drop(thetanew), iter = counter, g = gradnew, H = Hfd)) ## Return list
   
 }
-
-
