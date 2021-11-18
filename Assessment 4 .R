@@ -143,7 +143,7 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
     
 	  gradold <- get_grad(f, theta = thetaold, ...) ## Gradient of old or k-1 paramter vector stored    
 	
-    step <- -1 *(B %*% gradold) ## Determie the Quasi-Newton step = -InvHessian * gradient or the descent direction
+    step <- -1 *(B %*% gradold) ## Determine the Quasi-Newton step = -InvHessian * gradient or the descent direction
     
     step <- wolf_check(f,thetaold, step, c2, ...) ## Check Wolfe conditions and return new step length
     
@@ -153,11 +153,11 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
     	
     gradnew <- get_grad(f,thetanew, ...) ## Calculate gradient of the new parameter vector
      	
-    y <- gradnew - gradold ## Calculate differnce between old and new gradients
+    y <- gradnew - gradold ## Calculate difference between old and new gradients
  
     rho <- drop(1/(t(s) %*% y)) ## rho = transpose(s) * y         
 
-    ## B evaluated to reduce computational time by  matrix/vector multipldation rather than matrix/matrix
+    ## B evaluated to reduce computational time by  matrix/vector multiplication rather than matrix/matrix
     
     B <- B - (rho*B%*%y%*%t(s)) - rho*s%*%(t(y)%*%B) + (rho^2)*s%*%(t(y)%*%B)%*%y%*%t(s) + (rho * s %*% t(s)) 	## Approximating the Hessian B where B is given below as per BFGS algorithm:
 	
@@ -178,7 +178,7 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
 
   ## Calculating approximate Hessian matrix 
 
-  Hfd <- matrix(0,n,n)  ## Initiatite the Hessian matrix to be calculated by finite differencing
+  Hfd <- matrix(0,n,n)  ## Initiate the Hessian matrix to be calculated by finite differencing
   for (i in 1:n) {  ## Looping over the parameter length value to iterate over the matrix and calculate entries
     th1 <- thetanew; th1[i] <- th1[i] + eps ## Perturb gradient vector 
     g1 <- get_grad(f,th1, ...)  ## Calculating the gradient vector 
