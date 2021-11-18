@@ -70,7 +70,7 @@ wolf_check <- function(f ,thetaold, step, c2, ...) {
   while (wolfe_1 == FALSE | wolfe_2 == FALSE) { ## Continuous loop if wolfe conditions do not hold 
     
     while (wolfe_1 == FALSE) { ## Function not being reduced
-      step <- step * 0.25 ## Reduce step length by 1/2
+      step <- step * 0.25 ## Reduce step length by 1/4
       wolfe_counter <- wolfe_counter + 1 ## Update counter 
       wolfe_1 <- f(thetaold + drop(step), ...) <= f(thetaold, ...) ## Update logical if first wolfe condition satisfied
       if (wolfe_counter > 5) { ## break out of function if finding step length is taking too long
@@ -79,7 +79,7 @@ wolf_check <- function(f ,thetaold, step, c2, ...) {
     }
     
     while (wolfe_2 == FALSE) { ## Hessian not positive definite
-      step <- step * 1.25 ## Increase step length by 1.5
+      step <- step * 1.25 ## Increase step length by 1.25
       wolfe_counter <- wolfe_counter + 1 ## Update counter 
       wolfe_2 <- t(get_grad(f,thetaold + drop(step), ...)) %*% step >=  c2 * (t(get_grad(f,thetaold, ...))) %*% step ## Update logical if second wolfe condition satisfied
       if (wolfe_counter > 5) { ## break out of function if finding step length is taking too long
