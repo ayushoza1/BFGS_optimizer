@@ -22,6 +22,9 @@ get_grad <- function(f ,theta, ...) {
   ## by using the theta and eps values and f0 is the current point on the function. f = function of gradient to be found
   ## theta = parameter of values where gradient is to be found.
   
+  ## INPUT: objective function f and theta
+  ## OUTPUT: returns gradient of the objective function calculated by finite difference 
+  
   if (formals(f)[2] == FALSE) { ## Check to see if gradient calculation is needed by finite differencing
     
     eps <- sqrt(.Machine$double.eps) ## Declare peterbation value
@@ -55,7 +58,10 @@ wolf_check <- function(f ,thetaold, step, c2, ...) {
   ## definite for the next run of the bfgs iteration. A nested while loop is used to ensuer both conditions
   ## are met and the wolfe conditions rechecked once one condition has been met. If the first condition is 
   ## not met the step length is halved and if the second condition is not met the step length is multiplied
-  ## by 1.5. The function 'breaks' if no step length is found satifying both conditions after 50 itterations.
+  ## by 1.5. The function 'breaks' if no step length is found satifying both conditions after 50 iterations.
+  
+  ## INPUT: objective function, theta at old position on the function, step length, wolfe constants
+  ## OUTPUT: step satisfying Wolfe conditions 
   
   wolfe_1 <- f(thetaold + drop(step), ...) <= f(thetaold, ...)  ## Logical to see if objective function has been reduced
   wolfe_2 <- t(get_grad(f,thetaold + drop(step), ...)) %*% step >=  c2 * (t(get_grad(f,thetaold, ...))) %*% step ## Logical to see if updated Hessian is positive deffinite 
@@ -101,12 +107,17 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
   ## The BFGS Optimizer is an iterative method for solving non-linear optimization problems. The BFGS determines the 
   ## direction of descent by preconditioning the gradient with curvature information. This is achieved by gradually improving 
   ## an approximation to the Hessian matrix of the loss function obtained by gradient evaluation.  
+  
+  ## INPUT:
   ## theta is the vector of initial values for our optimization problem
   ## f is the objective function argument. The first argument of function is a vector of optimization parameters and second
   ## argument is a logical indicating if gradient is to be calculated
   ## ... is for any arguments of f that are to be passed to it after the above two
+  ## tol is the tolerance value to calculate step difference 
   ## fscale indicates a rough estimate of magnitude of f at the optimum
   ## maxit is the maximum number of BFGS iterations taken by the function before stopping further optimization
+  
+  ## OUTPUT: 
   ## The BFGS function above returns the below values upon calling it with valid arguments: 
   ## f being the scalar value of the objective function at the minimum
   ## theta is the vector of values of parameters at the minimum
