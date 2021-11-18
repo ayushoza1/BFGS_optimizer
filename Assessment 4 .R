@@ -22,8 +22,8 @@ get_grad <- function(f ,theta, ...) {
   ## by using the theta and eps values and f0 is the current point on the function. f = function of gradient to be found
   ## theta = parameter of values where gradient is to be found.
   
-  ## INPUT: objective function f and theta
-  ## OUTPUT: returns gradient of the objective function calculated by finite difference 
+  ## INPUT: objective function=f and theta=parameter values
+  ## OUTPUT: returns gradient of the objective function calculated by finite difference or using gradient attribute = grad
   
   if (formals(f)[2] == FALSE) { ## Check to see if gradient calculation is needed by finite differencing
     
@@ -40,7 +40,7 @@ get_grad <- function(f ,theta, ...) {
       grad[i] <- (f1 - f0)/eps  
     } 
 
-  } else {  ## If finite differncing is not requed gradient function is provided
+  } else {  ## If finite differncing is not required gradient function is provided
     
     grad <- attr(f(theta, 1), "gradient") 
 
@@ -60,8 +60,8 @@ wolf_check <- function(f ,thetaold, step, c2, ...) {
   ## not met the step length is halved and if the second condition is not met the step length is multiplied
   ## by 1.5. The function 'breaks' if no step length is found satifying both conditions after 50 iterations.
   
-  ## INPUT: objective function, theta at old position on the function, step length, wolfe constants
-  ## OUTPUT: step satisfying Wolfe conditions 
+  ## INPUT: objective function = f, theta at old position on the function = thetaold, step length= step, wolfe constants = c2
+  ## OUTPUT: step satisfying Wolfe conditions = step
   
   wolfe_1 <- f(thetaold + drop(step), ...) <= f(thetaold, ...)  ## Logical to see if objective function has been reduced
   wolfe_2 <- t(get_grad(f,thetaold + drop(step), ...)) %*% step >=  c2 * (t(get_grad(f,thetaold, ...))) %*% step ## Logical to see if updated Hessian is positive deffinite 
@@ -155,9 +155,9 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
      	
     y <- gradnew - gradold ## Calculate differnce between old and new gradients
  
-    rho <- drop(1/(t(s) %*% y)) ## rho = transpost(s) * y         
+    rho <- drop(1/(t(s) %*% y)) ## rho = transpose(s) * y         
 
-    ## B evaluated to reduced computational time by  matrix/vector multipldation rather than matrix/matrix
+    ## B evaluated to reduce computational time by  matrix/vector multipldation rather than matrix/matrix
     
     B <- B - (rho*B%*%y%*%t(s)) - rho*s%*%(t(y)%*%B) + (rho^2)*s%*%(t(y)%*%B)%*%y%*%t(s) + (rho * s %*% t(s)) 	## Approximating the Hessian B where B is given below as per BFGS algorithm:
 	
@@ -190,7 +190,7 @@ bfgs <- function(theta,f,...,tol=1e-5,fscale=1,maxit=100) {
   ## Returning all the calculated values as required by the BFG function as a list - function value at thetanew, thetanew, 
   ## number of iterations taken for approximation, newgradient, Hessian 
   
-  return(list(f = f(thetanew), theta = thetanew, iter = counter, g = gradnew, H = Hfd)) ## Return list
+  return(list(f = f(thetanew), theta = drop(thetanew), iter = counter, g = gradnew, H = Hfd)) ## Return list
   
 }
 
